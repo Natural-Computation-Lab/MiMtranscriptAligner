@@ -13,8 +13,6 @@ from skimage import draw
 from skimage.color import rgb2gray
 from skimage.filters import sobel
 from skimage.filters import threshold_otsu
-import pytesseract
-from difflib import SequenceMatcher
 from heapq import *
 from utils import save_alignments 
 from tqdm import tqdm
@@ -45,7 +43,6 @@ ACW_THRESH_MIN = 10                # threshold for min values for the consistenc
 ACW_THRESH_CORR_A = 3              # Min number of letter to apply correction to acw thrasholds
 ACW_THRESH_CORR_B = 0.005          # Percentage of correction for each character in the acw thresholds
 EXTIMATE_ACW_THRS = False          # If True, ACW_THRESH_MAX and _MIN are estimated on the current document
-USE_OCR = False                    # use OCR engine
 ALLIGNMENT_MODE = 1                # 0=MiM - 1=Forward 
 ORIGINAL = False                   # Test the original IGS method
 
@@ -55,34 +52,6 @@ CONST_LESS = 2
 CONST_GREAT = 1
 CONST_OK = 0
 
-def get_OCR(image, custom_config=r'--oem 3 --psm 6'):
-    """
-    --psm NUM             Specify page segmentation mode.
-        0    Orientation and script detection (OSD) only.
-        1    Automatic page segmentation with OSD.
-        2    Automatic page segmentation, but no OSD, or OCR.
-        3    Fully automatic page segmentation, but no OSD. (Default)
-        4    Assume a single column of text of variable sizes.
-        5    Assume a single uniform block of vertically aligned text.
-        6    Assume a single uniform block of text.
-        7    Treat the image as a single text line.
-        8    Treat the image as a single word.
-        9    Treat the image as a single word in a circle.
-        10    Treat the image as a single character.
-        11    Sparse text. Find as much text as possible in no particular order.
-        12    Sparse text with OSD.
-        13    Raw line. Treat the image as a single text line,
-              bypassing hacks that are Tesseract-specific.
-
-    --oem NUM             Specify OCR Engine mode.
-        0    Legacy engine only.
-        1    Neural nets LSTM engine only.
-        2    Legacy + LSTM engines.
-        3    Default, based on what is available.
-    """
-    text = pytesseract.image_to_string(image, config=custom_config)
-    text = text.replace("\n", "")
-    return text
 
 def vertical_projections(image):
     return np.sum(image, axis=0) 
@@ -102,7 +71,7 @@ def get_white_pixel(image):
     #va sistemato un po - ci sta anche il filtro per i bb piccoli, fai qualcosa anche qui
     return get_black_pixel(image, oper=operator.le)
 
-def get_bb_regions(image, use_oc=False):
+def get_bb_regions(image):
     bounding_blocks = []
     transcript_interp = []
     needtobreak = False
@@ -128,11 +97,6 @@ def get_bb_regions(image, use_oc=False):
         i += 1
 
     bounding_blocks = filter_bb_list(bounding_blocks, bb_min_size=MINIMUM_BB_SIZE)
-
-    if use_oc:
-        for bb in bounding_blocks:
-            transcript = get_OCR(image[:,bb[0]:bb[1]])
-            transcript_interp.append(transcript)
 
     return bounding_blocks, transcript_interp
 
@@ -297,7 +261,7 @@ def box_segmentation(current_bb, line_img, n_cutting_edges=1):
 
     return cutting_edje
 
-def forward_allignment(bb_words_list, bin_line_img, line_gt, acw, acw_max_thr=ACW_THRESH_MAX, acw_min_thr=ACW_THRESH_MIN, use_oc=False):
+def forward_allignment(bb_words_list, bin_line_img, line_gt, acw, acw_max_thr=ACW_THRESH_MAX, acw_min_thr=ACW_THRESH_MIN):
     """
     Forward allignment algorithm ,from left to wright
     """
@@ -337,35 +301,7 @@ def forward_allignment(bb_words_list, bin_line_img, line_gt, acw, acw_max_thr=AC
                         current_word = current_word + " " +all_words[current_wordIndex_left]
             test_consistency = consistency_check(current_word, current_bb, acw,acw_max_thr=acw_max_thr, acw_min_thr=acw_min_thr)
         current_bbIndex_left += 1
-        current_wordIndex_left += 1
-
-        if use_oc:
-            transcript = get_OCR(image[:,current_bb[0]:current_bb[1]])
-            if len(transcript) > 0:
-                #transcript = clean_gt(transcript)
-                transcript_consistency = consistency_check(transcript, current_bb, acw,acw_max_thr=acw_max_thr, acw_min_thr=acw_min_thr)
-                similarity = SequenceMatcher(None, transcript, current_word).ratio()
-                print(f"transcript[{transcript}] - allign=[{current_word}] test={transcript_consistency}-{test_consistency} - simi:{similarity}]")
-
-                #if similarity < 0.5:
-                #    plt.imshow(image[:,current_bb[0]:current_bb[1]])
-                #    plt.show()
-                #    print()
-
-                # if transcript_consistency == CONST_LESS:
-                #     plt.imshow(image[:,current_bb[0]:current_bb[1]])
-                #     plt.show()
-                    
-                #     cutting_edje = box_segmentation(current_bb, bin_line_img)[0]
-                #     subtest_consistency = consistency_check(current_word, [current_bb[0], cutting_edje], acw,acw_max_thr=acw_max_thr, acw_min_thr=acw_min_thr)
-                #     plt.imshow(image[:,current_bb[0]:cutting_edje])
-                #     plt.show()
-                #     if subtest_consistency == CONST_OK:
-                #         #create new bb
-                #         current_bb = [current_bb[0], cutting_edje-1]
-                #         bb_words_list[current_bbIndex_left][0] = cutting_edje+1
-                #         current_bbIndex_left -= 1
-               
+        current_wordIndex_left += 1 
 
 
         allignments_bb.append(current_bb)
@@ -657,6 +593,7 @@ if __name__ == "__main__":
             # load image
             image = io.imread(os.path.join(document_path, line_name))
             gray_image = rgb2gray(image)
+
             bin_image = gray_image > threshold_otsu(gray_image)
 
             # load ground thruth
@@ -669,7 +606,7 @@ if __name__ == "__main__":
             line_gt = line_gt.strip()
 
             #first word segemtation
-            bb_words_list, transcript_bb_list = get_bb_regions(bin_image, use_oc=USE_OCR)
+            bb_words_list, transcript_bb_list = get_bb_regions(bin_image)
             #save_bb_image(image, bb_words_list, os.path.join(OUT_FOLDER, doc_folder_name, "bb_"+line_name), word_list=transcript_bb_list)
 
             if FUSE_BB:
@@ -688,7 +625,7 @@ if __name__ == "__main__":
                 if ORIGINAL:
                     allign_bb_list, allign_bb_word = forward_allignment_original(bb_words_list, line_gt, acw, acw_max_thr=acw_max_thr, acw_min_thr=acw_min_thr)
                 else:
-                    allign_bb_list, allign_bb_word = forward_allignment(bb_words_list, bin_image, line_gt, acw, acw_max_thr=acw_max_thr, acw_min_thr=acw_min_thr, use_oc=USE_OCR)
+                    allign_bb_list, allign_bb_word = forward_allignment(bb_words_list, bin_image, line_gt, acw, acw_max_thr=acw_max_thr, acw_min_thr=acw_min_thr)
 
             #print(line_gt)
             #for bb, word in zip(allign_bb_list, allign_bb_word):

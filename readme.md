@@ -1,6 +1,14 @@
 # Transcripts Alignment - MiM Algorithm
 The method allows to align the transcription of a line of text to the related words in the image of the line
 
+## Define enviroment
+You need to have the anaconda environment manager installed on your computer.
+If so, run the command
+```conda env create -f environment.yml```
+and acrivate the enciroment: 
+```conda activate MiMalign```
+
+
 ## Preparation
 1. Create a ```"data/lines"``` folder which contains the images of the text lines. The folder is organized into subfolders, one for each document.
 
