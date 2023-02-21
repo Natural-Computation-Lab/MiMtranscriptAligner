@@ -23,10 +23,14 @@ and acrivate the enciroment:
 
 2. You can fix the alignment algorithm outputs by running the ```"correction_tool.py"``` file
    the tool will display all the words aligned one at a time.
-   With the ENTER key you can move to the next word.
-   With the BACKSPACE key you go back to the previous word (of the same line)
-   With the cntrl+s keys you save the state
-   With the cntrl+q keys you can close the GUI (or just with 'q', it depends on your CV2 version)
+    - With the ENTER key you can move to the next word.
+    - With the BACKSPACE key you go back to the previous word (of the same line)
+    - With the DEL key you can delete an alignmnt
+    - With the cntrl+s keys you save the state
+    - With the cntrl+q keys you can close the GUI (or just with 'q', it depends on your CV2 version)
+    
+   At the end of the correction process, the tool shows all the alignments with more than one words.
+   Witha lect click of the mouse you can split the image to obtain a single-word segmentation.
    
    To correct a segmentation fault you can use the mouse:
       with a click with the left button a new left segmentation boundary is set
