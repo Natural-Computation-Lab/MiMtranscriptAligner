@@ -592,7 +592,10 @@ if __name__ == "__main__":
         for line_name in os.listdir(document_path):
             # load image
             image = io.imread(os.path.join(document_path, line_name))
-            gray_image = rgb2gray(image)
+            if len(image.shape) > 2:
+                gray_image = rgb2gray(image)
+            else:
+                gray_image = image
 
             bin_image = gray_image > threshold_otsu(gray_image)
 

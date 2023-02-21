@@ -26,7 +26,7 @@ and acrivate the enciroment:
    With the ENTER key you can move to the next word.
    With the BACKSPACE key you go back to the previous word (of the same line)
    With the cntrl+s keys you save the state
-   With the cntrl+q keys you can close the GUI
+   With the cntrl+q keys you can close the GUI (or just with 'q', it depends on your CV2 version)
    
    To correct a segmentation fault you can use the mouse:
       with a click with the left button a new left segmentation boundary is set

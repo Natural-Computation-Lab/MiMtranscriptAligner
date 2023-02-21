@@ -14,3 +14,5 @@ PERFORMANCE_FILENAME = "performance.txt"
 #reference height
 H = 115
 
+# Enable the cropper word at the end of the correction
+CROP_WORDS = True

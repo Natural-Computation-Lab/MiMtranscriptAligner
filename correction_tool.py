@@ -72,10 +72,11 @@ def correct_aligns(aligns, outfile="out"):
                         new_start = x
                         print(f"[{new_start}")
 
-                        cv2.line(curr_img, (new_start, 0), (new_start, H), (0,0,255), 2) 
-                        cv2.imshow('image', curr_img)
+                        #cv2.line(curr_img, (new_start, 0), (new_start, H), (0,0,255), 2) 
+                        curr_image_view = curr_img.copy()
+                        cv2.rectangle(curr_image_view,(new_start,1),(box[1],H),(0,255,0),2)
+                        cv2.imshow('image', curr_image_view)
                         
-                        # write file!!
                         params[0] = new_start
                     
                     # checking for right mouse clicks    
@@ -83,8 +84,10 @@ def correct_aligns(aligns, outfile="out"):
                         new_end = x
                         print(f"[   ,{new_end}]")
                 
-                        cv2.line(curr_img, (new_end, 0), (new_end, H), (255,0,255), 2) 
-                        cv2.imshow('image', curr_img)
+                        #cv2.line(curr_img, (new_end, 0), (new_end, H), (255,0,255), 2) 
+                        curr_image_view = curr_img.copy()
+                        cv2.rectangle(curr_image_view,(box[0],1),(new_end,H),(0,255,0),2)
+                        cv2.imshow('image', curr_image_view)
 
                         params[1] = new_end
                 
@@ -93,9 +96,7 @@ def correct_aligns(aligns, outfile="out"):
                 #curr_img = line_img.copy()
                 curr_img = np.zeros((line_img.shape[0]+100, line_img.shape[1], line_img.shape[2]), dtype=np.uint8)
                 curr_img[0:line_img.shape[0], 0:line_img.shape[1], 0:line_img.shape[2]] = line_img
-
-                cv2.rectangle(curr_img,(box[0],1),(box[1],H),(0,255,0),1)
-
+                
                 #text under box
                 #cv2.putText(curr_img, trans, (box[0],line_img.shape[0]+40), FONT_CV, 1, (128, 240, 128), 2) #box
                 img = Image.new('RGB', (len(trans)*20, 40), color = (0, 0, 0))
@@ -119,19 +120,22 @@ def correct_aligns(aligns, outfile="out"):
                 img = Image.new('RGB', (len(trans)*25, 30), color = (0, 0, 0))
                 d = ImageDraw.Draw(img)
                 d.text((10,0), trans, font=FONT_REGULAR_PIL,  fill=(255,200,200))
-                img = np.asarray(img)
+                img = np.asarray(img) 
                 bottom_margin = 1
                 curr_img[curr_img.shape[0]-(30+bottom_margin):curr_img.shape[0]-bottom_margin,0:len(trans)*25, : ] = img
 
-                
                 # state of progression
                 str_curr_position =  f"{count}/{all_aligns}"
                 cv2.putText(curr_img, str_curr_position, (line_img.shape[1]-15*len(str_curr_position),line_img.shape[0]+90), FONT_CV, 0.6, (255, 200, 200), 1)
                 
-                cv2.imshow('image', curr_img)
+
+                curr_image_view = curr_img.copy()
+                cv2.rectangle(curr_image_view,(box[0],1),(box[1],H),(0,255,0),2)
+
+                cv2.namedWindow("image", cv2.WINDOW_GUI_NORMAL)
+                cv2.imshow('image', curr_image_view)
                 cv2.setMouseCallback('image', click_event, param=box)
                 key_pressed = cv2.waitKey(0)
-                
                 if key_pressed == 13:
                     #  ENTER
                     curr_indword += 1
@@ -144,14 +148,18 @@ def correct_aligns(aligns, outfile="out"):
                         #curr_indword = 0
                         curr_indword = TEST_PREV_LINE
                         count += 1
+                elif key_pressed == 46:
+                    print("del")
+                    del boxes[curr_indword]
+                    del transcriptions[curr_indword]
                     
                 elif key_pressed == 83:
                     # ALT+s
                     # VA RICHIAMATA LA FUNZIONE mesure_performnace()
                     print("-------- SAVE STATE -------")
                     save_alignments(aligns, outfile)
-                elif key_pressed == 17:
-                    #CTRL+q
+                elif key_pressed == 17 or key_pressed == 113:
+                    #q
                     #quit and save
                     print("-------- SAVE STATE -------")
                     save_alignments(aligns, outfile)
@@ -181,6 +189,91 @@ def correct_aligns(aligns, outfile="out"):
             from_next_doc = True
             curr_inddoc -= 1
             count -= 1
+
+def crop_multiwords(aligns, outfile="out"):
+    
+    for doc in aligns:
+        for line_image in aligns[doc]:
+            line_img = cv2.imread(os.path.join(LINE_FOLDER, doc, line_image))
+            (boxes, transcriptions) = aligns[doc][line_image]
+            ind = 0
+            while ind < len(boxes):
+                if len(transcriptions[ind].split(" "))>1:
+                #while!!!
+                    print(f" -- Multi-words image:{transcriptions[ind]}")
+                    def click_event(event, x, y, flags, params):
+                        if event == cv2.EVENT_LBUTTONDOWN:
+                            # displaying the coordinates
+                            crop_border = x
+                            print(f"crop at {crop_border} pixels")
+
+                            curr_image_view = curr_img.copy()
+                            cv2.line(curr_image_view, (crop_border, 0), (crop_border, H), (0,0,255), 2) 
+                            cv2.imshow('word_image', curr_image_view)
+                            
+                            params[0] = crop_border
+                        
+                        # checking for right mouse clicks    
+                        if event==cv2.EVENT_RBUTTONDOWN:
+                            pass
+                    
+                    word_image = line_img[:,boxes[ind][0]:boxes[ind][1],:]
+                    curr_img = np.zeros((word_image.shape[0]+100, word_image.shape[1], word_image.shape[2]), dtype=np.uint8)
+                    curr_img[0:word_image.shape[0], 0:word_image.shape[1], 0:word_image.shape[2]] = word_image
+                    
+                    #text under box
+                    parts = transcriptions[ind].split(" ")
+                    cut_string = parts[0] + " |"
+                    for w in  parts[1:]:
+                        cut_string += " "+w
+                    img = Image.new('RGB', (len(cut_string)*20, 40), color = (0, 0, 0))
+                    d = ImageDraw.Draw(img)
+                    d.text((0,0), cut_string, font=FONT_BOLD_PIL,  fill=(128, 240, 128))
+                    img = np.asarray(img)
+                    bottom_margin = 10
+                    y_start = curr_img.shape[0]-(40+bottom_margin)
+                    y_end = curr_img.shape[0]-bottom_margin
+                    x_start = 10
+                    x_end = 10 +len(cut_string)*20
+                    if x_end >curr_img.shape[1]:
+                        x_end = curr_img.shape[1]
+                    curr_img[y_start:y_end,x_start:x_end, : ] = img[:,:(x_end-x_start),:]
+
+                    # base image
+                    curr_image_view = curr_img.copy()
+                    #cv2.namedWindow("image", cv2.WINDOW_GUI_NORMAL)
+                    cv2.imshow('word_image', curr_image_view)
+                    cut_border = [0]
+                    cv2.setMouseCallback('word_image', click_event, param=cut_border)
+                    key_pressed = cv2.waitKey(0)
+                    if key_pressed == 13:
+                        #  ENTER
+                        pre_box = [boxes[ind][0], boxes[ind][0]+cut_border[0]]
+                        post_box = [boxes[ind][0]+cut_border[0]+1,boxes[ind][1]]
+                        pre_trans = parts[0]
+                        post_trans = ""
+                        for el in parts[1:]:
+                            post_trans+=el+" "
+                        post_trans = post_trans[:-1]
+
+                        boxes[ind] = pre_box
+                        transcriptions[ind] = pre_trans
+                        boxes = boxes[:ind+1] + [0] + boxes[ind+1:]
+                        boxes[ind+1] = post_box
+                        transcriptions = transcriptions[:ind+1] + [post_trans] + transcriptions[ind+1:]
+
+                        aligns[doc][line_image] = (boxes, transcriptions)
+                        save_alignments(aligns, outfile)
+
+                        ind += 1
+                    elif key_pressed == 8:
+                        # backspace
+                        pass
+                else:
+                    ind += 1
+    cv2.destroyAllWindows()
+
+        
 
 def _get_aligns_number(aligns):
     num_of_aligns = 0
@@ -252,6 +345,7 @@ if __name__ == "__main__":
     orig_aligns = copy.deepcopy(aligns)
 
     start_time = time.time()
+
     correct_aligns(aligns, outfile=ALIGNMENT_FILE)
     total_time = time.time() - start_time
 
@@ -263,6 +357,11 @@ if __name__ == "__main__":
     print("Box with more than 1 word:")
     print(f"correct_2:{correct_2} correct_3:{correct_3} correct_4:{correct_4} correct_more:{correct_more}\nwrong_2:{wrong_2} wrong_3:{wrong_3} wrong_4:{wrong_4} wrong_morre:{wrong_more}")
 
+    if configs.CROP_WORDS:
+        print("\n\n\nCrop multiple words images...")
+        crop_multiwords(aligns, outfile=ALIGNMENT_FILE)
+    cropword_total_time = time.time() - start_time
+    
     # save performance and time file
     if not os.path.exists(configs.PERFORMANCE_BASEFOLDER):
         os.mkdir(configs.PERFORMANCE_BASEFOLDER)
@@ -278,6 +377,13 @@ if __name__ == "__main__":
     time_filepath = os.path.join(configs.TIME_BASEFOLDER, dt_string+configs.TIME_WORDCORRECTION_FILENAME)
     with(open(time_filepath, "w") as timefile):
         timefile.write(f"Correction has required {total_time} seconds")
+        if configs.CROP_WORDS:
+            timefile.write(f"Correction has required {cropword_total_time} seconds including the multi-word image cropping")
+
+        
+
+   
+
 
 
     print("Done!")

@@ -21,10 +21,13 @@ def crop_all_words(aligns, dst_folder="out"):
              
             inline_pos = 0
             for box, trans in zip(boxes, transcriptions):
-                word_filename = doc_folder + "_" + line_filename.split(".")[0] + "_" + str(inline_pos).zfill(2) + "_" + trans + "." + line_filename.split(".")[-1]
+                if box[0]==box[1]:
+                    print(f"Not possible to save {word_filename}")
+                else:
+                    word_filename = doc_folder + "_" + line_filename.split(".")[0] + "_" + str(inline_pos).zfill(2) + "_" + trans + "." + line_filename.split(".")[-1]
 
-                word_img = line_img[: , box[0]:box[1]]
-                cv2.imwrite(os.path.join(dst_folder, word_filename), word_img)
+                    word_img = line_img[: , box[0]:box[1]]
+                    cv2.imwrite(os.path.join(dst_folder, word_filename), word_img)
 
                 inline_pos += 1
 
