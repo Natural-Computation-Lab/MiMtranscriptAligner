@@ -74,7 +74,8 @@ def correct_aligns(aligns, outfile="out"):
 
                         #cv2.line(curr_img, (new_start, 0), (new_start, H), (0,0,255), 2) 
                         curr_image_view = curr_img.copy()
-                        cv2.rectangle(curr_image_view,(new_start,1),(box[1],H),(0,255,0),2)
+                        cv2.rectangle(curr_image_view,(new_start,1),(box[1],H),configs.BOX_COLOR, configs.BOX_BORDER)
+                        curr_image_view = cv2.addWeighted(curr_image_view, configs.BOX_TRANSPARENCY_ALPHA, curr_img, 1 - configs.BOX_TRANSPARENCY_ALPHA, 0)
                         cv2.imshow('image', curr_image_view)
                         
                         params[0] = new_start
@@ -86,7 +87,8 @@ def correct_aligns(aligns, outfile="out"):
                 
                         #cv2.line(curr_img, (new_end, 0), (new_end, H), (255,0,255), 2) 
                         curr_image_view = curr_img.copy()
-                        cv2.rectangle(curr_image_view,(box[0],1),(new_end,H),(0,255,0),2)
+                        cv2.rectangle(curr_image_view,(box[0],1),(new_end,H),configs.BOX_COLOR, configs.BOX_BORDER)
+                        curr_image_view = cv2.addWeighted(curr_image_view, configs.BOX_TRANSPARENCY_ALPHA, curr_img, 1 - configs.BOX_TRANSPARENCY_ALPHA, 0)
                         cv2.imshow('image', curr_image_view)
 
                         params[1] = new_end
@@ -130,9 +132,10 @@ def correct_aligns(aligns, outfile="out"):
                 
 
                 curr_image_view = curr_img.copy()
-                cv2.rectangle(curr_image_view,(box[0],1),(box[1],H),(0,255,0),2)
+                cv2.rectangle(curr_image_view,(box[0],1),(box[1],H),configs.BOX_COLOR, configs.BOX_BORDER)
 
                 cv2.namedWindow("image", cv2.WINDOW_GUI_NORMAL)
+                curr_image_view = cv2.addWeighted(curr_image_view, configs.BOX_TRANSPARENCY_ALPHA, curr_img, 1 - configs.BOX_TRANSPARENCY_ALPHA, 0)
                 cv2.imshow('image', curr_image_view)
                 cv2.setMouseCallback('image', click_event, param=box)
                 key_pressed = cv2.waitKey(0)
@@ -208,7 +211,7 @@ def crop_multiwords(aligns, outfile="out"):
                             print(f"crop at {crop_border} pixels")
 
                             curr_image_view = curr_img.copy()
-                            cv2.line(curr_image_view, (crop_border, 0), (crop_border, H), (0,0,255), 2) 
+                            cv2.line(curr_image_view, (crop_border, 0), (crop_border, H), configs.DIVIDER_COLOR, configs.DIVIDER_BORDER) 
                             cv2.imshow('word_image', curr_image_view)
                             
                             params[0] = crop_border

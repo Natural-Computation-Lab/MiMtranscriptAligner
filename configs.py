@@ -16,3 +16,10 @@ H = 115
 
 # Enable the cropper word at the end of the correction
 CROP_WORDS = True
+
+# BOX segmenter parame
+BOX_TRANSPARENCY_ALPHA = 0.3
+BOX_BORDER = 1
+BOX_COLOR = (0,255,0)
+DIVIDER_BORDER = 1
+DIVIDER_COLOR = (0,0,255)
