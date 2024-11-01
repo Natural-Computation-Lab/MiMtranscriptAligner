@@ -139,6 +139,7 @@ def correct_aligns(aligns, outfile="out"):
                 cv2.imshow('image', curr_image_view)
                 cv2.setMouseCallback('image', click_event, param=box)
                 key_pressed = cv2.waitKey(0)
+                #print(f"Pressed:{key_pressed}")
                 if key_pressed == 13:
                     #  ENTER
                     curr_indword += 1
@@ -151,10 +152,16 @@ def correct_aligns(aligns, outfile="out"):
                         #curr_indword = 0
                         curr_indword = TEST_PREV_LINE
                         count += 1
-                elif key_pressed == 46:
-                    print("del")
+                elif key_pressed == 46 or key_pressed == 68 or key_pressed == 14:
+                    #print("Deleted BB")
                     del boxes[curr_indword]
                     del transcriptions[curr_indword]
+                
+                elif key_pressed == 14 or key_pressed == 17 or key_pressed == 110:
+                    #print("New BB")
+                    boxes.insert(curr_indword, boxes[curr_indword].copy())
+                    transcriptions.insert(curr_indword, 'NewBox')
+                    
                     
                 elif key_pressed == 83:
                     # ALT+s
@@ -272,6 +279,11 @@ def crop_multiwords(aligns, outfile="out"):
                     elif key_pressed == 8:
                         # backspace
                         pass
+                    elif key_pressed == 17 or key_pressed == 113:
+                    #q
+                        #quit and save
+                        print("-------- CLOSE -------")
+                        return
                 else:
                     ind += 1
     cv2.destroyAllWindows()
@@ -384,11 +396,4 @@ if __name__ == "__main__":
             timefile.write(f"Correction has required {cropword_total_time} seconds including the multi-word image cropping")
 
         
-
-   
-
-
-
     print("Done!")
-
-
