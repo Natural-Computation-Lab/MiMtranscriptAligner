@@ -25,9 +25,10 @@ and acrivate the enciroment:
    the tool will display all the words aligned one at a time.
     - With the ENTER key you can move to the next word.
     - With the BACKSPACE key you go back to the previous word (of the same line)
-    - With the DEL key you can delete an alignmnt
-    - With the cntrl+s keys you save the state
-    - With the cntrl+q keys you can close the GUI (or just with 'q', it depends on your CV2 version)
+    - With the DEL (or SHIFT+D) key you can delete an alignmnt
+    - With the SHIFT+n keys you can add a new bb at the current position (after the current bb)
+    - With the SHIFT+s keys you save the state
+    - With the SHIFT+q keys you can close the GUI (or just with 'q', it depends on your CV2 version)
     
    At the end of the correction process, the tool shows all the alignments with more than one words.
    Witha lect click of the mouse you can split the image to obtain a single-word segmentation.
